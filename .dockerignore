@@ -1,0 +1,71 @@
+# ===========================================
+# AI Floor Plan Generator Backend - .dockerignore
+# ===========================================
+
+# Dependencies (will be installed in container)
+node_modules/
+npm-debug.log*
+
+# Environment files (use Railway env vars instead)
+.env
+.env.*
+.env.local
+.env.production
+.env.staging
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+CHANGELOG.md
+LICENSE
+docs/
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+__tests__/
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Build artifacts
+dist/
+build/
+out/
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.docker/
+.dockerignore
+
+# Misc
+*.md
+*.txt
+.editorconfig
+.eslintrc*
+.prettierrc*
+tsconfig.json
+nodemon.json
