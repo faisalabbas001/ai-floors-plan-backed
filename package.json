@@ -13,7 +13,8 @@
     "architecture",
     "openai",
     "express",
-    "mongodb"
+    "postgresql",
+    "neon"
   ],
   "author": "",
   "license": "MIT",
@@ -23,8 +24,8 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.9.5",
     "openai": "^4.77.3",
+    "pg": "^8.18.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

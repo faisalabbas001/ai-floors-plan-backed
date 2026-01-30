@@ -1,43 +1,59 @@
-const mongoose = require('mongoose');
+const { Pool } = require('pg');
 const { env } = require('./env');
 const logger = require('../utils/logger');
 
+let pool = null;
+
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(env.MONGODB_URI, {
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
+    pool = new Pool({
+      connectionString: env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
     });
 
-    logger.info(`MongoDB connected: ${conn.connection.host}`);
+    // Test connection
+    const client = await pool.connect();
+    logger.info(`PostgreSQL connected successfully`);
 
-    mongoose.connection.on('error', (err) => {
-      logger.error(`MongoDB connection error: ${err.message}`);
-    });
+    // Create users table if not exists
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-    mongoose.connection.on('disconnected', () => {
-      logger.warn('MongoDB disconnected. Attempting to reconnect...');
-    });
+    logger.info('Database tables initialized');
+    client.release();
 
-    mongoose.connection.on('reconnected', () => {
-      logger.info('MongoDB reconnected');
-    });
-
-    return conn;
+    return pool;
   } catch (error) {
-    logger.error(`MongoDB connection failed: ${error.message}`);
+    logger.error(`PostgreSQL connection failed: ${error.message || error}`);
+    console.error('Full error:', error);
     process.exit(1);
   }
 };
 
 const disconnectDB = async () => {
   try {
-    await mongoose.connection.close();
-    logger.info('MongoDB connection closed');
+    if (pool) {
+      await pool.end();
+      logger.info('PostgreSQL connection closed');
+    }
   } catch (error) {
-    logger.error(`Error closing MongoDB connection: ${error.message}`);
+    logger.error(`Error closing PostgreSQL connection: ${error.message}`);
   }
 };
 
-module.exports = { connectDB, disconnectDB };
+const getPool = () => pool;
+
+module.exports = { connectDB, disconnectDB, getPool };

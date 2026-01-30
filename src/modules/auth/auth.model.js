@@ -1,58 +1,60 @@
-const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const { getPool } = require('../../config/db');
 
-const userSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: [true, 'Name is required'],
-      trim: true,
-      minlength: [3, 'Name must be at least 3 characters'],
-      maxlength: [100, 'Name cannot exceed 100 characters'],
-    },
-    email: {
-      type: String,
-      required: [true, 'Email is required'],
-      unique: true,
-      lowercase: true,
-      trim: true,
-      match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email'],
-    },
-    password: {
-      type: String,
-      required: [true, 'Password is required'],
-      minlength: [8, 'Password must be at least 8 characters'],
-      select: false,
-    },
+// User model for PostgreSQL
+const User = {
+  // Create a new user
+  async create({ name, email, password }) {
+    const pool = getPool();
+    const salt = await bcrypt.genSalt(12);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const result = await pool.query(
+      `INSERT INTO users (name, email, password)
+       VALUES ($1, $2, $3)
+       RETURNING id, name, email, created_at, updated_at`,
+      [name, email, hashedPassword]
+    );
+
+    return result.rows[0];
   },
-  {
-    timestamps: true,
-    toJSON: {
-      transform: (doc, ret) => {
-        delete ret.password;
-        delete ret.__v;
-        return ret;
-      },
-    },
-  }
-);
 
-userSchema.index({ email: 1 });
+  // Find user by email
+  async findByEmail(email) {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT id, name, email, password, created_at, updated_at
+       FROM users WHERE email = $1`,
+      [email]
+    );
+    return result.rows[0] || null;
+  },
 
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
-    return next();
-  }
+  // Find user by ID
+  async findById(id) {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT id, name, email, created_at, updated_at
+       FROM users WHERE id = $1`,
+      [id]
+    );
+    return result.rows[0] || null;
+  },
 
-  const salt = await bcrypt.genSalt(12);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
-});
+  // Compare password
+  async comparePassword(candidatePassword, hashedPassword) {
+    return bcrypt.compare(candidatePassword, hashedPassword);
+  },
 
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+  // Check if email exists
+  async emailExists(email) {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT id FROM users WHERE email = $1`,
+      [email]
+    );
+    return result.rows.length > 0;
+  },
 };
-
-const User = mongoose.model('User', userSchema);
 
 module.exports = User;

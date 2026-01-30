@@ -7,7 +7,8 @@ const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: parseInt(process.env.PORT, 10) || 5000,
 
-  MONGODB_URI: process.env.MONGODB_URI,
+  // PostgreSQL/Neon Database
+  DATABASE_URL: process.env.DATABASE_URL,
 
   JWT_SECRET: process.env.JWT_SECRET,
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
@@ -19,7 +20,7 @@ const env = {
 };
 
 const validateEnv = () => {
-  const required = ['MONGODB_URI', 'JWT_SECRET', 'OPENAI_API_KEY'];
+  const required = ['DATABASE_URL', 'JWT_SECRET', 'OPENAI_API_KEY'];
   const missing = required.filter((key) => !env[key]);
 
   if (missing.length > 0) {

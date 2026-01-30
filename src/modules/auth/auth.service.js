@@ -8,8 +8,9 @@ class AuthService {
   async signup(userData) {
     const { name, email, password } = userData;
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    // Check if email exists
+    const emailExists = await User.emailExists(email);
+    if (emailExists) {
       throw new AppError('Email already registered', 409);
     }
 
@@ -19,16 +20,16 @@ class AuthService {
       password,
     });
 
-    logger.info('User registered successfully', { userId: user._id, email });
+    logger.info('User registered successfully', { userId: user.id, email });
 
     const token = this.generateToken(user);
 
     return {
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
-        createdAt: user.createdAt,
+        createdAt: user.created_at,
       },
       token,
     };
@@ -37,26 +38,26 @@ class AuthService {
   async login(credentials) {
     const { email, password } = credentials;
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findByEmail(email);
     if (!user) {
       throw new AppError('Invalid email or password', 401);
     }
 
-    const isPasswordValid = await user.comparePassword(password);
+    const isPasswordValid = await User.comparePassword(password, user.password);
     if (!isPasswordValid) {
       throw new AppError('Invalid email or password', 401);
     }
 
-    logger.info('User logged in successfully', { userId: user._id, email });
+    logger.info('User logged in successfully', { userId: user.id, email });
 
     const token = this.generateToken(user);
 
     return {
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
-        createdAt: user.createdAt,
+        createdAt: user.created_at,
       },
       token,
     };
@@ -69,17 +70,17 @@ class AuthService {
     }
 
     return {
-      id: user._id,
+      id: user.id,
       name: user.name,
       email: user.email,
-      createdAt: user.createdAt,
+      createdAt: user.created_at,
     };
   }
 
   generateToken(user) {
     return jwt.sign(
       {
-        id: user._id,
+        id: user.id,
         email: user.email,
       },
       env.JWT_SECRET,
