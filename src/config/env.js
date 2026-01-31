@@ -17,6 +17,12 @@ const env = {
   OPENAI_MODEL: process.env.OPENAI_MODEL || 'gpt-4o-mini',
 
   CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:3000',
+
+  // CAD/DWG Conversion (optional - CloudConvert for DXF to DWG)
+  CLOUDCONVERT_API_KEY: process.env.CLOUDCONVERT_API_KEY,
+
+  // ODA File Converter path (optional - local DWG conversion)
+  ODA_CONVERTER_PATH: process.env.ODA_CONVERTER_PATH,
 };
 
 const validateEnv = () => {

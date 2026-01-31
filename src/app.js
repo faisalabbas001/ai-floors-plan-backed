@@ -4,6 +4,7 @@ const { env } = require('./config/env');
 const { errorHandler, notFoundHandler } = require('./middlewares/error.middleware');
 const authRoutes = require('./modules/auth/auth.routes');
 const plannerRoutes = require('./modules/planner/planner.routes');
+const cadRoutes = require('./modules/cad/cad.routes');
 const logger = require('./utils/logger');
 
 const app = express();
@@ -62,12 +63,14 @@ app.get('/api', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       planner: '/api/planner',
+      cad: '/api/cad',
     },
   });
 });
 
 app.use('/api/auth', authRoutes);
 app.use('/api/planner', plannerRoutes);
+app.use('/api/cad', cadRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
