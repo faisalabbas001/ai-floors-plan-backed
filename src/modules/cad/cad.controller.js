@@ -5,7 +5,7 @@
 
 const cadService = require('./cad.service');
 const { validateCadGenerate } = require('./cad.validation');
-const { successResponse, errorResponse } = require('../../utils/response');
+const ApiResponse = require('../../utils/response');
 const logger = require('../../utils/logger');
 
 /**
@@ -22,7 +22,7 @@ async function generateCAD(req, res) {
     // Validate plan data
     const validation = cadService.validatePlanData(planData);
     if (!validation.valid) {
-      return errorResponse(res, 'Invalid plan data', 400, validation.errors);
+      return ApiResponse.error(res, 'Invalid plan data', 400, validation.errors);
     }
 
     logger.info(`CAD generation requested by user ${req.user?.id}`, {
@@ -39,7 +39,7 @@ async function generateCAD(req, res) {
     });
 
     if (!result.success) {
-      return errorResponse(res, result.error || 'CAD generation failed', 500);
+      return ApiResponse.error(res, result.error || 'CAD generation failed', 500);
     }
 
     // Convert file content to base64 for JSON response
@@ -72,16 +72,16 @@ async function generateCAD(req, res) {
       };
     }
 
-    return successResponse(res, response, 'CAD files generated successfully');
+    return ApiResponse.success(res, response, 'CAD files generated successfully');
 
   } catch (error) {
     logger.error(`CAD generation error: ${error.message}`, { stack: error.stack });
 
     if (error.name === 'ZodError') {
-      return errorResponse(res, 'Validation error', 400, error.errors);
+      return ApiResponse.error(res, 'Validation error', 400, error.errors);
     }
 
-    return errorResponse(res, error.message || 'CAD generation failed', 500);
+    return ApiResponse.error(res, error.message || 'CAD generation failed', 500);
   }
 }
 
@@ -94,13 +94,13 @@ async function downloadCAD(req, res) {
     const { format } = req.params;
 
     if (!['dxf', 'dwg'].includes(format)) {
-      return errorResponse(res, 'Invalid format. Use dxf or dwg.', 400);
+      return ApiResponse.error(res, 'Invalid format. Use dxf or dwg.', 400);
     }
 
     // Plan data should be passed in query (base64 encoded) or session
     const planDataBase64 = req.query.plan;
     if (!planDataBase64) {
-      return errorResponse(res, 'Plan data required', 400);
+      return ApiResponse.error(res, 'Plan data required', 400);
     }
 
     const planData = JSON.parse(Buffer.from(planDataBase64, 'base64').toString());
@@ -112,12 +112,12 @@ async function downloadCAD(req, res) {
     });
 
     if (!result.success) {
-      return errorResponse(res, result.error || 'Generation failed', 500);
+      return ApiResponse.error(res, result.error || 'Generation failed', 500);
     }
 
     const file = result.files[format];
     if (!file) {
-      return errorResponse(res, 'File not generated', 500);
+      return ApiResponse.error(res, 'File not generated', 500);
     }
 
     // Set headers for file download
@@ -134,7 +134,7 @@ async function downloadCAD(req, res) {
 
   } catch (error) {
     logger.error(`CAD download error: ${error.message}`);
-    return errorResponse(res, error.message || 'Download failed', 500);
+    return ApiResponse.error(res, error.message || 'Download failed', 500);
   }
 }
 
@@ -146,7 +146,7 @@ async function getStats(req, res) {
   try {
     const cacheStats = cadService.getCacheStats();
 
-    return successResponse(res, {
+    return ApiResponse.success(res, {
       cache: cacheStats,
       supportedFormats: ['dxf', 'dwg'],
       dwgConversionAvailable: !!process.env.CLOUDCONVERT_API_KEY,
@@ -154,7 +154,7 @@ async function getStats(req, res) {
 
   } catch (error) {
     logger.error(`CAD stats error: ${error.message}`);
-    return errorResponse(res, error.message, 500);
+    return ApiResponse.error(res, error.message, 500);
   }
 }
 
@@ -167,12 +167,12 @@ async function generateDXFOnly(req, res) {
     const { planData, floorIndex = 0, scale = 1 } = req.body;
 
     if (!planData) {
-      return errorResponse(res, 'Plan data required', 400);
+      return ApiResponse.error(res, 'Plan data required', 400);
     }
 
     const validation = cadService.validatePlanData(planData);
     if (!validation.valid) {
-      return errorResponse(res, 'Invalid plan data', 400, validation.errors);
+      return ApiResponse.error(res, 'Invalid plan data', 400, validation.errors);
     }
 
     const result = await cadService.generateCADFiles(planData, {
@@ -182,7 +182,7 @@ async function generateDXFOnly(req, res) {
     });
 
     if (!result.success || !result.files.dxf) {
-      return errorResponse(res, result.error || 'DXF generation failed', 500);
+      return ApiResponse.error(res, result.error || 'DXF generation failed', 500);
     }
 
     // Return DXF as direct download
@@ -193,7 +193,7 @@ async function generateDXFOnly(req, res) {
 
   } catch (error) {
     logger.error(`DXF generation error: ${error.message}`);
-    return errorResponse(res, error.message, 500);
+    return ApiResponse.error(res, error.message, 500);
   }
 }
 

@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const cadController = require('./cad.controller');
-const { authMiddleware } = require('../../middlewares/auth.middleware');
+const authMiddleware = require('../../middlewares/auth.middleware');
 
 /**
  * @route   POST /api/cad/generate

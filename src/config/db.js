@@ -6,11 +6,12 @@ let pool = null;
 
 const connectDB = async () => {
   try {
+    // Use SSL only for production (cloud databases)
+    const isProduction = env.NODE_ENV === 'production';
+
     pool = new Pool({
       connectionString: env.DATABASE_URL,
-      ssl: {
-        rejectUnauthorized: false,
-      },
+      ssl: isProduction ? { rejectUnauthorized: false } : false,
       max: 10,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
